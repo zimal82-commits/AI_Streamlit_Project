@@ -1,17 +1,18 @@
 # =========================================================================
-# === FASA 2: TRUE INTEGRATED MARKET AI - BELAJAR DARI FASA 1 ===
+# === FASA 2: TRUE INTEGRATED MARKET AI - STREAMLIT VERSION ===
 # =========================================================================
 
-import threading, time, random
+import time
+import random
 import numpy as np
 import pandas as pd
-import ipywidgets as widgets
-from IPython.display import display, HTML, clear_output
+import streamlit as st
+from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
 # =========================================================================
-# === KNOWLEDGE TRANSFORMATION ENGINE ===
+# === KNOWLEDGE TRANSFORMATION ENGINE (SAMA SEPERTI SEBELUM) ===
 # =========================================================================
 
 class KnowledgeTransformation:
@@ -36,15 +37,15 @@ class KnowledgeTransformation:
         """Transform semua vision rules dari FASA 1 menjadi trading strategies"""
         trading_strategies = []
 
-        print("🔄 TRANSFORMING FASA 1 KNOWLEDGE TO TRADING STRATEGIES...")
+        st.info("🔄 TRANSFORMING FASA 1 KNOWLEDGE TO TRADING STRATEGIES...")
 
         for rule in self.memory.learned_knowledge['sop_rules']:
             strategy = self._create_trading_strategy(rule)
             if strategy:
                 trading_strategies.append(strategy)
-                print(f"   ✅ {rule.get('rule', 'Unknown')} → {strategy['strategy']}")
+                st.success(f"✅ {rule.get('rule', 'Unknown')} → {strategy['strategy']}")
 
-        print(f"🎯 TOTAL STRATEGIES CREATED: {len(trading_strategies)}")
+        st.success(f"🎯 TOTAL STRATEGIES CREATED: {len(trading_strategies)}")
         return trading_strategies
 
     def _create_trading_strategy(self, vision_rule):
@@ -127,7 +128,7 @@ class KnowledgeTransformation:
         }
 
 # =========================================================================
-# === ADAPTIVE LEARNING SYSTEM ===
+# === ADAPTIVE LEARNING SYSTEM (SAMA) ===
 # =========================================================================
 
 class AdaptiveLearningSystem:
@@ -225,144 +226,184 @@ class AdaptiveLearningSystem:
         return None
 
 # =========================================================================
-# === TRUE INTEGRATED MARKET AI ===
+# === TRUE INTEGRATED MARKET AI - STREAMLIT VERSION ===
 # =========================================================================
 
-class TrueIntegratedMarketAI:
+class TrueIntegratedMarketAIStreamlit:
     def __init__(self, memory_system):
-        print("🚀 INITIALIZING TRUE INTEGRATED MARKET AI...")
+        st.header("🧠 FASA 2: TRUE INTEGRATED MARKET AI")
+        st.info("🔗 CONTINUOUS LEARNING FROM FASA 1 | ADAPTIVE STRATEGY DEVELOPMENT")
 
         self.memory = memory_system
         self.knowledge_transformer = KnowledgeTransformation(memory_system)
         self.adaptive_learner = AdaptiveLearningSystem(memory_system)
 
+        # Initialize session state untuk FASA 2
+        if 'fasa2_initialized' not in st.session_state:
+            st.session_state.fasa2_initialized = True
+            st.session_state.is_learning_running = False
+            st.session_state.learning_cycles = 0
+            st.session_state.trading_stats = {
+                'total_signals': 0,
+                'profitable_signals': 0,
+                'total_profit': 0.0,
+                'win_rate': 0.0,
+                'learning_cycles': 0,
+                'strategies_developed': 0,
+                'ai_intelligence_growth': 0
+            }
+            st.session_state.market_data_history = []
+            st.session_state.current_analysis = {}
+            st.session_state.last_update = time.time()
+
         # Transform FASA 1 knowledge ke trading strategies
-        self.trading_strategies = self.knowledge_transformer.transform_vision_rules()
+        with st.spinner("🔄 Transforming FASA 1 knowledge to trading strategies..."):
+            self.trading_strategies = self.knowledge_transformer.transform_vision_rules()
+            st.session_state.trading_stats['strategies_developed'] = len(self.trading_strategies)
 
-        # Trading statistics
-        self.trading_stats = {
-            'total_signals': 0,
-            'profitable_signals': 0,
-            'total_profit': 0.0,
-            'win_rate': 0.0,
-            'learning_cycles': 0,
-            'strategies_developed': len(self.trading_strategies),
-            'ai_intelligence_growth': 0
-        }
+        st.success(f"✅ INTEGRATED AI READY: {len(self.trading_strategies)} strategies from FASA 1")
 
-        self.is_running = False
-        self.analysis_thread = None
-        self.market_data_history = []
+    def show_integrated_dashboard(self):
+        """Show main integrated dashboard"""
+        
+        # Display integration status
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("📚 SOP Rules", len(self.memory.learned_knowledge['sop_rules']))
+        with col2:
+            st.metric("🎯 Strategies", len(self.trading_strategies))
+        with col3:
+            st.metric("🧠 AI Intelligence", f"{self.memory.performance_stats['ai_intelligence']}%")
+        with col4:
+            st.metric("📈 Learning Cycles", st.session_state.learning_cycles)
 
-        print(f"✅ INTEGRATED AI READY: {len(self.trading_strategies)} strategies from FASA 1")
-        self.setup_integrated_ui()
+        st.markdown("---")
 
-    def setup_integrated_ui(self):
-        """Setup UI untuk integrated system"""
+        # Control panel
+        st.subheader("🎯 INTEGRATED AI CONTROLS")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("🚀 START INTEGRATED LEARNING", type="primary", use_container_width=True):
+                self.start_integrated_learning()
+        
+        with col2:
+            if st.button("⏹️ STOP LEARNING", use_container_width=True):
+                self.stop_integrated_learning()
+        
+        with col3:
+            if st.button("🔄 SINGLE LEARNING CYCLE", use_container_width=True):
+                self.single_learning_cycle()
 
-        self.btn_start_learning = widgets.Button(
-            description="🧠 START LEARNING AI",
-            button_style='success',
-            layout=widgets.Layout(width='220px', height='60px')
-        )
+        # Real-time dashboard
+        self.show_realtime_dashboard()
 
-        self.btn_stop_learning = widgets.Button(
-            description="⏹️ STOP LEARNING",
-            button_style='danger',
-            layout=widgets.Layout(width='200px', height='60px')
-        )
+        # Additional analysis sections
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Strategy Analysis", "📈 Learning Progress", "🤖 AI Intelligence", "🔍 Market Analysis"])
 
-        self.btn_strategy_analysis = widgets.Button(
-            description="📊 STRATEGY ANALYSIS",
-            button_style='info',
-            layout=widgets.Layout(width='200px', height='60px')
-        )
+        with tab1:
+            self.show_strategy_analysis()
+        
+        with tab2:
+            self.show_learning_progress()
+        
+        with tab3:
+            self.show_ai_intelligence()
+        
+        with tab4:
+            self.show_market_analysis()
 
-        self.btn_learning_progress = widgets.Button(
-            description="📈 LEARNING PROGRESS",
-            button_style='warning',
-            layout=widgets.Layout(width='200px', height='60px')
-        )
+    def start_integrated_learning(self):
+        """Start continuous learning"""
+        st.session_state.is_learning_running = True
+        st.success("🧠 INTEGRATED LEARNING STARTED - AI is learning from market experience!")
+        
+        # Simulate continuous learning dengan automatic refresh
+        st.rerun()
 
-        self.btn_ai_intelligence = widgets.Button(
-            description="🤖 AI INTELLIGENCE",
-            button_style='primary',
-            layout=widgets.Layout(width='200px', height='60px')
-        )
+    def stop_integrated_learning(self):
+        """Stop continuous learning"""
+        st.session_state.is_learning_running = False
+        st.warning("🛑 INTEGRATED LEARNING STOPPED")
+        
+        # Show final performance
+        stats = st.session_state.trading_stats
+        st.info(f"""
+        📊 **Final Performance:**
+        - Win Rate: {stats['win_rate']:.1%}
+        - Total Profit: ${stats['total_profit']:.2f}
+        - Learning Cycles: {stats['learning_cycles']}
+        - Strategies Developed: {stats['strategies_developed']}
+        """)
 
-        self.integrated_output = widgets.Output(layout=widgets.Layout(
-            height='600px',
-            border='3px solid #4CAF50',
-            padding='20px',
-            margin='15px 0',
-            background_color='#f1f8e9'
-        ))
+    def single_learning_cycle(self):
+        """Execute single learning cycle"""
+        market_data = self.get_advanced_market_data()
+        st.session_state.market_data_history.append(market_data)
+        
+        analysis = self.analyze_with_learned_strategies(market_data)
+        st.session_state.current_analysis = analysis
+        
+        # Execute trade jika ada signal kuat
+        if analysis['signal_strength'] > 0.7:
+            trade_result = self.execute_learning_trade(analysis, market_data)
+            self.update_learning_stats(trade_result)
+            self.adaptive_learning_update(analysis, trade_result)
+        
+        st.session_state.learning_cycles += 1
+        st.session_state.trading_stats['learning_cycles'] = st.session_state.learning_cycles
+        st.session_state.last_update = time.time()
+        
+        st.success(f"🔁 Learning Cycle #{st.session_state.learning_cycles} Completed!")
 
-        # Event handlers
-        self.btn_start_learning.on_click(self.start_integrated_learning)
-        self.btn_stop_learning.on_click(self.stop_integrated_learning)
-        self.btn_strategy_analysis.on_click(self.show_strategy_analysis)
-        self.btn_learning_progress.on_click(self.show_learning_progress)
-        self.btn_ai_intelligence.on_click(self.show_ai_intelligence)
-
-    def start_integrated_learning(self, b):
-        """Start integrated learning loop"""
-        if not self.is_running:
-            self.is_running = True
-            self.analysis_thread = threading.Thread(target=self.integrated_learning_loop, daemon=True)
-            self.analysis_thread.start()
-
-            with self.integrated_output:
-                clear_output()
-                print("🧠 TRUE INTEGRATED LEARNING AI ACTIVATED!")
-                print("=" * 65)
-                print("🔗 FULLY CONNECTED TO FASA 1 KNOWLEDGE BASE")
-                print("📈 CONTINUOUS LEARNING FROM MARKET EXPERIENCE")
-                print("🚀 ADAPTIVE STRATEGY DEVELOPMENT ENABLED")
-                print("=" * 65)
-                print(f"📚 USING {len(self.trading_strategies)} LEARNED STRATEGIES")
-                print(f"🎯 AI INTELLIGENCE: {self.memory.performance_stats['ai_intelligence']}%")
-
-    def stop_integrated_learning(self, b):
-        """Stop integrated learning"""
-        self.is_running = False
-        with self.integrated_output:
-            print("\n🛑 INTEGRATED LEARNING STOPPED")
-            print(f"📊 Final Performance:")
-            print(f"   • Win Rate: {self.trading_stats['win_rate']:.1%}")
-            print(f"   • Total Profit: ${self.trading_stats['total_profit']:.2f}")
-            print(f"   • Learning Cycles: {self.trading_stats['learning_cycles']}")
-            print(f"   • Strategies Developed: {self.trading_stats['strategies_developed']}")
-
-    def integrated_learning_loop(self):
-        """Main integrated learning loop"""
-        cycle_count = 0
-
-        while self.is_running:
-            cycle_count += 1
-            self.trading_stats['learning_cycles'] = cycle_count
-
-            # Get market data
-            market_data = self.get_advanced_market_data()
-            self.market_data_history.append(market_data)
-
-            # Analyze dengan learned strategies
-            analysis = self.analyze_with_learned_strategies(market_data)
-
-            # Execute trade jika ada signal kuat
-            if analysis['signal_strength'] > 0.7:
-                trade_result = self.execute_learning_trade(analysis, market_data)
-                self.update_learning_stats(trade_result)
-
-                # Adaptive learning - update strategies berdasarkan results
-                self.adaptive_learning_update(analysis, trade_result)
-
-            # Update display
-            with self.integrated_output:
-                clear_output()
-                self.display_integrated_dashboard(cycle_count, market_data, analysis)
-
-            time.sleep(3)  # Learning cycle interval
+    def show_realtime_dashboard(self):
+        """Show real-time learning dashboard"""
+        st.subheader("📊 REAL-TIME LEARNING DASHBOARD")
+        
+        if st.session_state.current_analysis:
+            analysis = st.session_state.current_analysis
+            market_data = self.get_advanced_market_data() if not st.session_state.market_data_history else st.session_state.market_data_history[-1]
+            
+            # Current market info
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("💰 EUR/USD Price", f"{market_data['price']:.4f}")
+            with col2:
+                st.metric("📈 Volatility", f"{market_data['volatility']:.2f}")
+            with col3:
+                st.metric("🎯 Trend Strength", f"{market_data['trend_strength']:.1f}%")
+            
+            # Trading signal
+            signal_color = "green" if analysis['signal'] == 'BUY' else "red" if analysis['signal'] == 'SELL' else "gray"
+            st.markdown(f"### 🎯 TRADING SIGNAL: :{signal_color}[{analysis['signal']}]")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("💪 Signal Strength", f"{analysis['signal_strength']:.1%}")
+            with col2:
+                st.metric("🔍 Confidence", f"{analysis['confidence']:.1%}")
+            with col3:
+                st.metric("📚 Strategies Used", analysis['strategy_count'])
+            
+            # Performance metrics
+            stats = st.session_state.trading_stats
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("📈 Win Rate", f"{stats['win_rate']:.1%}")
+            with col2:
+                st.metric("💰 Total Profit", f"${stats['total_profit']:.2f}")
+            with col3:
+                st.metric("🧠 AI Growth", f"{stats['ai_intelligence_growth']:.1f}%")
+            
+            # Active strategies
+            if analysis['strategies_used']:
+                st.write("**🤖 STRATEGIES ACTIVATED:**")
+                for strategy in analysis['strategies_used'][:4]:
+                    st.write(f"• {strategy}")
+        else:
+            st.info("🔄 No learning data yet. Start learning to see real-time analysis.")
 
     def analyze_with_learned_strategies(self, market_data):
         """Analyze market dengan strategies yang dipelajari dari FASA 1"""
@@ -385,7 +426,7 @@ class TrueIntegratedMarketAI:
             if new_strategy:
                 applicable_strategies.append(new_strategy)
                 self.trading_strategies.append(new_strategy)
-                self.trading_stats['strategies_developed'] += 1
+                st.session_state.trading_stats['strategies_developed'] += 1
 
         return self.calculate_integrated_signal(applicable_strategies, market_data)
 
@@ -503,22 +544,22 @@ class TrueIntegratedMarketAI:
 
     def update_learning_stats(self, trade_result):
         """Update learning statistics"""
-        self.trading_stats['total_signals'] += 1
+        st.session_state.trading_stats['total_signals'] += 1
 
         if trade_result['profitable']:
-            self.trading_stats['profitable_signals'] += 1
-            self.trading_stats['total_profit'] += trade_result['profit_dollars']
+            st.session_state.trading_stats['profitable_signals'] += 1
+            st.session_state.trading_stats['total_profit'] += trade_result['profit_dollars']
 
         # Update win rate
-        if self.trading_stats['total_signals'] > 0:
-            self.trading_stats['win_rate'] = (
-                self.trading_stats['profitable_signals'] / self.trading_stats['total_signals']
+        if st.session_state.trading_stats['total_signals'] > 0:
+            st.session_state.trading_stats['win_rate'] = (
+                st.session_state.trading_stats['profitable_signals'] / st.session_state.trading_stats['total_signals']
             )
 
         # Update AI intelligence growth
-        self.trading_stats['ai_intelligence_growth'] = min(
-            self.trading_stats['learning_cycles'] * 0.5 +
-            self.trading_stats['win_rate'] * 50,
+        st.session_state.trading_stats['ai_intelligence_growth'] = min(
+            st.session_state.trading_stats['learning_cycles'] * 0.5 +
+            st.session_state.trading_stats['win_rate'] * 50,
             100
         )
 
@@ -533,7 +574,7 @@ class TrueIntegratedMarketAI:
             'analysis': analysis,
             'trade_result': trade_result,
             'strategies_used': analysis['strategies_used'],
-            'market_conditions': self.get_market_conditions(self.market_data_history[-1] if self.market_data_history else {}),
+            'market_conditions': self.get_market_conditions(self.market_data_history[-1] if st.session_state.market_data_history else {}),
             'lesson_learned': self.extract_learning_lesson(analysis, trade_result)
         }
 
@@ -550,7 +591,7 @@ class TrueIntegratedMarketAI:
         else:
             return f"Strategies {analysis['strategies_used']} need adjustment despite {analysis['confidence']:.1%} confidence"
 
-    # Market condition evaluation methods
+    # Market condition evaluation methods (sama seperti sebelumnya)
     def is_price_near_key_level(self, market_data):
         return abs(market_data['price'] - market_data['support_level']) < 0.001 or \
                abs(market_data['price'] - market_data['resistance_level']) < 0.001
@@ -559,25 +600,21 @@ class TrueIntegratedMarketAI:
         return market_data['trend_strength'] > 60
 
     def is_price_at_fibo_level(self, market_data):
-        # Simulate Fibonacci level detection
         fibo_levels = [1.0820, 1.0840, 1.0860, 1.0880]
         return any(abs(market_data['price'] - level) < 0.0005 for level in fibo_levels)
 
     def has_multiple_confluence(self, market_data):
-        # Multiple technical factors aligning
         return (market_data['trend_strength'] > 50 and
                 market_data['volatility'] > 0.8 and
                 self.is_price_near_key_level(market_data))
 
     def is_chart_pattern_confirmed(self, market_data):
-        # Simulate chart pattern confirmation
         return market_data['volatility'] > 1.0 and market_data['trend_strength'] > 40
 
     def is_consolidation_breakout(self, market_data):
-        # Simulate consolidation breakout detection
-        if len(self.market_data_history) < 5:
+        if len(st.session_state.market_data_history) < 5:
             return False
-        recent_volatility = np.mean([d['volatility'] for d in self.market_data_history[-5:]])
+        recent_volatility = np.mean([d['volatility'] for d in st.session_state.market_data_history[-5:]])
         return market_data['volatility'] > recent_volatility * 1.5
 
     def get_market_conditions(self, market_data):
@@ -613,174 +650,170 @@ class TrueIntegratedMarketAI:
             'timestamp': time.time()
         }
 
-    def display_integrated_dashboard(self, cycle_count, market_data, analysis):
-        """Display integrated learning dashboard"""
-        print(f"🧠 TRUE INTEGRATED AI LEARNING - CYCLE #{cycle_count}")
-        print("=" * 70)
-        print(f"⏰ {time.strftime('%H:%M:%S')} | EUR/USD | CONTINUOUS LEARNING")
-        print(f"💰 Price: {market_data['price']:.4f} | Volatility: {market_data['volatility']:.2f}")
-        print(f"📈 Trend Strength: {market_data['trend_strength']:.1f}%")
-
-        print(f"\n🎯 TRADING SIGNAL: {analysis['signal']}")
-        print(f"💪 Signal Strength: {analysis['signal_strength']:.1%}")
-        print(f"🔍 Confidence: {analysis['confidence']:.1%}")
-        print(f"📚 Strategies Used: {analysis['strategy_count']} from FASA 1")
-
-        print(f"\n🤖 STRATEGIES ACTIVATED:")
-        for strategy in analysis['strategies_used'][:4]:  # Show first 4
-            print(f"   • {strategy}")
-        if len(analysis['strategies_used']) > 4:
-            print(f"   • ... and {len(analysis['strategies_used']) - 4} more")
-
-        print(f"\n📊 LEARNING PERFORMANCE:")
-        print(f"   Win Rate: {self.trading_stats['win_rate']:.1%} | "
-              f"Total Trades: {self.trading_stats['total_signals']}")
-        print(f"   Total Profit: ${self.trading_stats['total_profit']:.2f} | "
-              f"Learning Cycles: {self.trading_stats['learning_cycles']}")
-        print(f"   AI Intelligence Growth: {self.trading_stats['ai_intelligence_growth']:.1f}%")
-
-        print(f"\n💡 LEARNING INSIGHT:")
-        print(f"   {analysis['reason']}")
-
-    def show_strategy_analysis(self, b):
+    def show_strategy_analysis(self):
         """Show detailed strategy analysis"""
-        with self.integrated_output:
-            clear_output()
-            print("📊 STRATEGY ANALYSIS - FASA 1 INTEGRATION")
-            print("=" * 70)
+        st.subheader("📊 STRATEGY ANALYSIS - FASA 1 INTEGRATION")
+        
+        st.write(f"🧠 **TOTAL STRATEGIES:** {len(self.trading_strategies)}")
+        st.write(f"📈 **FROM FASA 1 RULES:** {len([s for s in self.trading_strategies if s['source_rule'] != 'MARKET_EXPERIENCE'])}")
+        st.write(f"🚀 **LEARNED FROM MARKET:** {len([s for s in self.trading_strategies if s['source_rule'] == 'MARKET_EXPERIENCE'])}")
 
-            print(f"🧠 TOTAL STRATEGIES: {len(self.trading_strategies)}")
-            print(f"📈 FROM FASA 1 RULES: {len([s for s in self.trading_strategies if s['source_rule'] != 'MARKET_EXPERIENCE'])}")
-            print(f"🚀 LEARNED FROM MARKET: {len([s for s in self.trading_strategies if s['source_rule'] == 'MARKET_EXPERIENCE'])}")
+        st.subheader("🎯 STRATEGY PERFORMANCE")
+        
+        for strategy in self.trading_strategies[:8]:  # Show top 8
+            perf = self.adaptive_learner.strategy_performance.get(strategy['strategy'], {})
+            win_rate = perf.get('win_rate', 0)
+            trades = perf.get('total_trades', 0)
 
-            print(f"\n🎯 STRATEGY PERFORMANCE:")
-            for strategy in self.trading_strategies[:8]:  # Show top 8
-                perf = self.adaptive_learner.strategy_performance.get(strategy['strategy'], {})
-                win_rate = perf.get('win_rate', 0)
-                trades = perf.get('total_trades', 0)
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write(f"**{strategy['strategy']}**")
+                st.write(f"Source: {strategy['source_rule']}")
+            with col2:
+                st.metric("Win Rate", f"{win_rate:.1%}")
+            
+            st.progress(win_rate, text=f"Confidence: {strategy['confidence']:.1%} → {strategy.get('current_confidence', strategy['confidence']):.1%}")
+            st.divider()
 
-                print(f"   • {strategy['strategy']}:")
-                print(f"     Source: {strategy['source_rule']}")
-                print(f"     Confidence: {strategy['confidence']:.1%} → {strategy.get('current_confidence', strategy['confidence']):.1%}")
-                print(f"     Performance: {win_rate:.1%} win rate ({trades} trades)")
-
-    def show_learning_progress(self, b):
+    def show_learning_progress(self):
         """Show learning progress and experiences"""
-        with self.integrated_output:
-            clear_output()
-            print("📈 LEARNING PROGRESS & EXPERIENCES")
-            print("=" * 70)
+        st.subheader("📈 LEARNING PROGRESS & EXPERIENCES")
+        
+        learning_experiences = self.memory.learned_knowledge.get('learning_experiences', [])
+        
+        st.write(f"📚 **TOTAL LEARNING EXPERIENCES:** {len(learning_experiences)}")
+        st.write(f"🧠 **AI INTELLIGENCE:** {self.memory.performance_stats['ai_intelligence']}%")
+        st.write(f"📈 **LEARNING GROWTH:** {st.session_state.trading_stats['ai_intelligence_growth']:.1f}%")
 
-            learning_experiences = self.memory.learned_knowledge.get('learning_experiences', [])
+        if learning_experiences:
+            st.subheader("🎯 RECENT LEARNING EXPERIENCES")
+            for exp in learning_experiences[-5:]:  # Last 5 experiences
+                result_color = "green" if exp['trade_result']['profitable'] else "red"
+                st.write(f"**{exp['lesson_learned']}**")
+                st.write(f"Strategies: {', '.join(exp['strategies_used'][:2])}...")
+                st.write(f"Result: :{result_color}[{'PROFIT' if exp['trade_result']['profitable'] else 'LOSS'} ${exp['trade_result']['profit_dollars']:.2f}]")
+                st.divider()
 
-            print(f"📚 TOTAL LEARNING EXPERIENCES: {len(learning_experiences)}")
-            print(f"🧠 AI INTELLIGENCE: {self.memory.performance_stats['ai_intelligence']}%")
-            print(f"📈 LEARNING GROWTH: {self.trading_stats['ai_intelligence_growth']:.1f}%")
-
-            if learning_experiences:
-                print(f"\n🎯 RECENT LEARNING EXPERIENCES:")
-                for exp in learning_experiences[-5:]:  # Last 5 experiences
-                    print(f"   • {exp['lesson_learned']}")
-                    print(f"     Strategies: {', '.join(exp['strategies_used'][:2])}...")
-                    print(f"     Result: {'PROFIT' if exp['trade_result']['profitable'] else 'LOSS'} "
-                          f"${exp['trade_result']['profit_dollars']:.2f}")
-
-    def show_ai_intelligence(self, b):
+    def show_ai_intelligence(self):
         """Show AI intelligence metrics"""
-        with self.integrated_output:
-            clear_output()
-            print("🤖 AI INTELLIGENCE METRICS")
-            print("=" * 70)
+        st.subheader("🤖 AI INTELLIGENCE METRICS")
+        
+        fasa1_intelligence = self.memory.performance_stats['ai_intelligence']
+        fasa2_growth = st.session_state.trading_stats['ai_intelligence_growth']
+        total_intelligence = min(fasa1_intelligence + fasa2_growth, 100)
 
-            fasa1_intelligence = self.memory.performance_stats['ai_intelligence']
-            fasa2_growth = self.trading_stats['ai_intelligence_growth']
-            total_intelligence = min(fasa1_intelligence + fasa2_growth, 100)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("🧠 OVERALL AI INTELLIGENCE", f"{total_intelligence:.1f}%")
+        with col2:
+            st.metric("📚 FASA 1 KNOWLEDGE", f"{fasa1_intelligence}%")
+        with col3:
+            st.metric("📈 FASA 2 GROWTH", f"{fasa2_growth:.1f}%")
 
-            print(f"🧠 OVERALL AI INTELLIGENCE: {total_intelligence:.1f}%")
-            print(f"📚 FASA 1 KNOWLEDGE: {fasa1_intelligence}%")
-            print(f"📈 FASA 2 GROWTH: {fasa2_growth:.1f}%")
+        st.subheader("📊 KNOWLEDGE BREAKDOWN")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"• SOP Rules from FASA 1: {len(self.memory.learned_knowledge['sop_rules'])}")
+            st.write(f"• Trading Strategies: {len(self.trading_strategies)}")
+        with col2:
+            st.write(f"• Learning Experiences: {len(self.memory.learned_knowledge.get('learning_experiences', []))}")
+            st.write(f"• Market Analysis Cycles: {st.session_state.trading_stats['learning_cycles']}")
 
-            print(f"\n📊 KNOWLEDGE BREAKDOWN:")
-            print(f"   • SOP Rules from FASA 1: {len(self.memory.learned_knowledge['sop_rules'])}")
-            print(f"   • Trading Strategies: {len(self.trading_strategies)}")
-            print(f"   • Learning Experiences: {len(self.memory.learned_knowledge.get('learning_experiences', []))}")
-            print(f"   • Market Analysis Cycles: {self.trading_stats['learning_cycles']}")
+        st.subheader("🎯 PERFORMANCE METRICS")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Win Rate", f"{st.session_state.trading_stats['win_rate']:.1%}")
+        with col2:
+            st.metric("Learning Efficiency", f"{min(st.session_state.trading_stats['learning_cycles'] / 10, 100):.1f}%")
+        with col3:
+            st.metric("Strategy Diversity", f"{min(len(self.trading_strategies) * 5, 100):.1f}%")
 
-            print(f"\n🎯 PERFORMANCE METRICS:")
-            print(f"   • Win Rate: {self.trading_stats['win_rate']:.1%}")
-            print(f"   • Learning Efficiency: {min(self.trading_stats['learning_cycles'] / 10, 100):.1f}%")
-            print(f"   • Strategy Diversity: {min(len(self.trading_strategies) * 5, 100):.1f}%")
+    def show_market_analysis(self):
+        """Show detailed market analysis"""
+        st.subheader("🔍 MARKET ANALYSIS")
+        
+        if st.session_state.market_data_history:
+            market_data = st.session_state.market_data_history[-1]
+            
+            # Market metrics
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Current Price", f"{market_data['price']:.4f}")
+            with col2:
+                st.metric("Volatility", f"{market_data['volatility']:.2f}")
+            with col3:
+                st.metric("Trend Strength", f"{market_data['trend_strength']:.1f}%")
+            with col4:
+                st.metric("Momentum", f"{market_data['momentum']:.1f}")
 
-    def display_integrated_system(self):
-        """Display the complete integrated system"""
-        display(HTML("""
-        <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-                   padding: 30px; border-radius: 20px; color: white; text-align: center;">
-        <h1>🧠 FASA 2: TRUE INTEGRATED MARKET AI</h1>
-        <h3>Continuous Learning from FASA 1 | Adaptive Strategy Development | Real-time Market Intelligence</h3>
-        </div>
-        """))
+            # Support/Resistance levels
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Support Level", f"{market_data['support_level']:.4f}")
+            with col2:
+                st.metric("Resistance Level", f"{market_data['resistance_level']:.4f}")
 
-        # Integration status
-        total_rules = len(self.memory.learned_knowledge['sop_rules'])
-        integration_html = f"""
-        <div style="background: #e8f5e8; padding: 25px; border-radius: 15px; margin: 20px 0;">
-        <h3>🔗 FULL INTEGRATION WITH FASA 1</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-            <div style="text-align: center;">
-                <h4>📚 SOP Rules</h4>
-                <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{total_rules}</p>
-            </div>
-            <div style="text-align: center;">
-                <h4>🎯 Strategies</h4>
-                <p style="font-size: 24px; font-weight: bold; color: #2196F3;">{len(self.trading_strategies)}</p>
-            </div>
-            <div style="text-align: center;">
-                <h4>🧠 AI Intelligence</h4>
-                <p style="font-size: 24px; font-weight: bold; color: #FF9800;">{self.memory.performance_stats['ai_intelligence']}%</p>
-            </div>
-        </div>
-        <p style="text-align: center; margin-top: 15px;">
-            <strong>🚀 Continuous Learning Active</strong> | <strong>📈 Adaptive Development Enabled</strong>
-        </p>
-        </div>
-        """
-        display(HTML(integration_html))
-
-        # Display control buttons
-        display(HTML("<h3>🎯 INTEGRATED AI CONTROLS:</h3>"))
-        display(widgets.HBox([self.btn_start_learning, self.btn_stop_learning]))
-        display(widgets.HBox([self.btn_strategy_analysis, self.btn_learning_progress, self.btn_ai_intelligence]))
-        display(self.integrated_output)
+            # Market conditions
+            conditions = self.get_market_conditions(market_data)
+            st.write("**📊 CURRENT MARKET CONDITIONS:**")
+            for condition in conditions:
+                st.write(f"• {condition.replace('_', ' ').title()}")
 
 # =========================================================================
-# === FASA 2 MAIN INTEGRATED SYSTEM ===
+# === INTEGRATION DENGAN FASA 1 ===
 # =========================================================================
 
-class Fasa2IntegratedSystem:
-    def __init__(self, superior_memory):
-        print("INITIALIZING FASA 2 INTEGRATED SYSTEM...")
-
-        self.memory = superior_memory
-        self.integrated_ai = TrueIntegratedMarketAI(superior_memory)
-
-        print("\n" + "="*70)
-        print("🧠 FASA 2 TRUE INTEGRATED AI READY!")
-        print("🔗 FULLY CONNECTED TO FASA 1 KNOWLEDGE BASE")
-        print("📈 CONTINUOUS LEARNING & ADAPTIVE DEVELOPMENT ENABLED")
-        print("🚀 AI WILL LEARN AND GROW FROM MARKET EXPERIENCE")
-        print("="*70)
-
-    def display_fasa2_system(self):
-        """Display complete FASA 2 integrated system"""
-        self.integrated_ai.display_integrated_system()
+def setup_fasa2_integration(superior_ai):
+    """Setup FASA 2 integration dengan FASA 1 system"""
+    
+    # Add FASA 2 to navigation
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🚀 FASA 2 INTEGRATION")
+    
+    if st.sidebar.button("🧠 LAUNCH FASA 2 INTEGRATED AI"):
+        # Initialize FASA 2 system
+        if 'fasa2_ai' not in st.session_state:
+            with st.spinner("🔗 INITIALIZING FASA 2 INTEGRATED AI..."):
+                st.session_state.fasa2_ai = TrueIntegratedMarketAIStreamlit(superior_ai.memory)
+        
+        # Show FASA 2 dashboard
+        st.session_state.fasa2_ai.show_integrated_dashboard()
+        return True
+    
+    return False
 
 # =========================================================================
-# === RUN FASA 2 INTEGRATED SYSTEM ===
+# === UPDATE FASA 1 UNTUK INTEGRASI FASA 2 ===
 # =========================================================================
 
-print("\n" + "="*70)
-print("FASA 2 TRUE INTEGRATED AI SYSTEM READY")
-print("To use: fasa2_integrated = Fasa2IntegratedSystem(superior_ai.memory)")
-print("Then: fasa2_integrated.display_fasa2_system()")
-print("="*70)
+# Dalam class SuperiorAILearning (FASA 1), tambahkan ini:
+
+def run_streamlit_interface_updated(self):
+    """Run AI system in Streamlit interface dengan FASA 2 integration"""
+    
+    # Sidebar untuk navigation
+    st.sidebar.title("🎯 SUPERIOR AI NAVIGATION")
+    app_mode = st.sidebar.selectbox(
+        "Choose Action",
+        ["🏠 Dashboard", "🎬 Upload Video", "🖼️ Upload Image", "📊 AI Status", 
+         "🧠 Knowledge Master", "🔍 Pattern Analyzer", "💾 Memory Explorer",
+         "🚀 FASA 2 Integrated AI"]  # ← TAMBAH INI
+    )
+
+    # Main content based on selection
+    if app_mode == "🏠 Dashboard":
+        self.show_dashboard()
+    elif app_mode == "🎬 Upload Video":
+        self.upload_video_interface()
+    elif app_mode == "🖼️ Upload Image":
+        self.upload_image_interface()
+    elif app_mode == "📊 AI Status":
+        self.show_super_status()
+    elif app_mode == "🧠 Knowledge Master":
+        self.show_knowledge_master()
+    elif app_mode == "🔍 Pattern Analyzer":
+        self.show_pattern_analyzer()
+    elif app_mode == "💾 Memory Explorer":
+        self.show_memory_explorer()
+    elif app_mode == "🚀 FASA 2 Integrated AI":  # ← TAMBAH INI
+        setup_fasa2_integration(self)
