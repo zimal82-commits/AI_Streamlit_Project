@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import warnings
+import streamlit as st
 warnings.filterwarnings('ignore')
 
 # =========================================================================
@@ -30,17 +31,17 @@ class SuperiorMemory:
         self.verify_storage()
         self.learned_knowledge, self.performance_stats = self.load_memory_verified()
 
-        print(f"🧠 SUPERIOR MEMORY LOADED: {len(self.learned_knowledge['sop_rules'])} rules")
-        print(f"📊 LEARNING HISTORY: {len(self.learned_knowledge['learning_history'])} records")
+        st.success(f"🧠 SUPERIOR MEMORY LOADED: {len(self.learned_knowledge['sop_rules'])} rules")
+        st.info(f"📊 LEARNING HISTORY: {len(self.learned_knowledge['learning_history'])} records")
 
     def verify_storage(self):
         """Verify local storage instead of Google Drive"""
         try:
             if not self.base_dir.exists():
                 self.base_dir.mkdir(parents=True)
-            print("✅ Local storage verified")
+            st.success("✅ Local storage verified")
         except Exception as e:
-            print(f"❌ Storage error: {e}")
+            st.error(f"❌ Storage error: {e}")
 
     def load_memory_verified(self):
         try:
@@ -49,14 +50,14 @@ class SuperiorMemory:
                     data = pickle.load(f)
 
                 if all(key in data for key in ['sop_rules', 'performance_stats', 'learning_history']):
-                    print("✅ Memory structure verified")
+                    st.success("✅ Memory structure verified")
                     return data, data['performance_stats']
 
-            print("🆕 Creating new superior memory...")
+            st.info("🆕 Creating new superior memory...")
             return self.create_new_memory()
 
         except Exception as e:
-            print(f"❌ Memory load error: {e}")
+            st.error(f"❌ Memory load error: {e}")
             return self.create_new_memory()
 
     def create_new_memory(self):
@@ -105,11 +106,11 @@ class SuperiorMemory:
             with open(self.history_file, 'wb') as f:
                 pickle.dump(self.learned_knowledge['learning_history'], f, protocol=pickle.HIGHEST_PROTOCOL)
 
-            print(f"💾 SUPER MEMORY SAVED: {len(self.learned_knowledge['sop_rules'])} rules")
+            st.success(f"💾 SUPER MEMORY SAVED: {len(self.learned_knowledge['sop_rules'])} rules")
             return True
 
         except Exception as e:
-            print(f"❌ Memory save failed: {e}")
+            st.error(f"❌ Memory save failed: {e}")
             return False
 
     def add_sop_rule(self, rule):
@@ -129,16 +130,16 @@ class SuperiorMemory:
 
             success = self.save_memory_guaranteed()
             if success:
-                print(f"✅ RULE SAVED: {rule.get('rule', 'Unknown')} (Confidence: {rule.get('confidence', 0):.2f})")
+                st.success(f"✅ RULE SAVED: {rule.get('rule', 'Unknown')} (Confidence: {rule.get('confidence', 0):.2f})")
                 return True
             else:
                 self.learned_knowledge['sop_rules'].pop()
                 self.learned_knowledge['learning_history'].pop()
-                print(f"❌ RULE SAVE FAILED")
+                st.error(f"❌ RULE SAVE FAILED")
                 return False
 
         except Exception as e:
-            print(f"❌ Rule add failed: {e}")
+            st.error(f"❌ Rule add failed: {e}")
             return False
 
     def calculate_ai_intelligence(self):
@@ -172,14 +173,19 @@ class SuperiorMemory:
 
 class SuperiorAILearning:
     def __init__(self):
-        print("🚀 INITIALIZING SUPERIOR AI LEARNING ENGINE...")
+        st.title("🚀 FASA 1 SUPERIOR - AI BELAJAR KEKAL & BIJAK")
+        st.markdown("---")
 
         # Initialize superior memory
         self.memory = SuperiorMemory()
 
-        # Setup upload directory
+        # Setup upload directory - FIXED: Gunakan path relatif
         self.upload_dir = Path("./ai_uploads")
-        self.upload_dir.mkdir(exist_ok=True)
+        try:
+            self.upload_dir.mkdir(exist_ok=True)
+            st.success(f"✅ Upload directory created: {self.upload_dir}")
+        except Exception as e:
+            st.error(f"❌ Error creating upload directory: {e}")
 
         # 16 ADVANCED AI MODELS
         self.ai_models = {
@@ -208,47 +214,46 @@ class SuperiorAILearning:
             'adaptive_learning_ai': "Adaptive Learning System"
         }
 
-        print(f"🔬 {len(self.ai_models)} ADVANCED AI MODELS LOADED")
-        print("✅ SUPERIOR AI LEARNING ENGINE READY!")
+        st.success(f"🔬 {len(self.ai_models)} ADVANCED AI MODELS LOADED")
 
-    def process_file_by_path(self, file_path, file_type):
-        """Process file based on file path (for local environment)"""
-        file_path = Path(file_path)
-        
-        if not file_path.exists():
-            print(f"❌ File not found: {file_path}")
-            return []
+    def process_uploaded_file(self, uploaded_file, file_type):
+        """Process uploaded file melalui Streamlit"""
+        if uploaded_file is not None:
+            # Save uploaded file to upload directory
+            file_path = self.upload_dir / uploaded_file.name
+            try:
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                
+                st.success(f"✅ File uploaded: {uploaded_file.name}")
+                
+                initial_stats = self.memory.get_detailed_stats()
+                st.info(f"📊 BEFORE: {initial_stats['total_rules']} rules, Intelligence: {initial_stats['ai_intelligence']}%")
 
-        print(f"✅ Processing {file_type}: {file_path}")
-        print("🔬 16 AI Models analyzing...")
+                with st.spinner("🔬 16 AI Models analyzing..."):
+                    if file_type == 'video':
+                        results = self.process_super_video(file_path)
+                        self.memory.performance_stats['videos_processed'] += 1
+                    else:  # image
+                        results = self.process_super_image(file_path)
+                        self.memory.performance_stats['images_processed'] += 1
 
-        initial_stats = self.memory.get_detailed_stats()
-        print(f"📊 BEFORE: {initial_stats['total_rules']} rules, Intelligence: {initial_stats['ai_intelligence']}%")
+                    # Update statistics
+                    self.memory.performance_stats['learning_sessions'] += 1
+                    self.memory.save_memory_guaranteed()
 
-        try:
-            if file_type == 'video':
-                results = self.process_super_video(file_path)
-                self.memory.performance_stats['videos_processed'] += 1
-            else:  # image
-                results = self.process_super_image(file_path)
-                self.memory.performance_stats['images_processed'] += 1
+                    final_stats = self.memory.get_detailed_stats()
 
-            # Update statistics
-            self.memory.performance_stats['learning_sessions'] += 1
-            self.memory.save_memory_guaranteed()
+                    st.success("🎉 SUPERIOR LEARNING COMPLETE!")
+                    st.metric("📈 New Patterns", len(results))
+                    st.metric("🚀 Intelligence", f"{final_stats['ai_intelligence']}%")
+                    st.metric("💾 Total Rules", final_stats['total_rules'])
 
-            final_stats = self.memory.get_detailed_stats()
+                return results
 
-            print("🎉 SUPERIOR LEARNING COMPLETE!")
-            print(f"📈 New Patterns: {len(results)}")
-            print(f"🚀 Intelligence: {final_stats['ai_intelligence']}% (+{final_stats['ai_intelligence'] - initial_stats['ai_intelligence']})")
-            print(f"💾 Total Rules: {final_stats['total_rules']}")
-
-            return results
-
-        except Exception as e:
-            print(f"❌ Processing error: {e}")
-            return []
+            except Exception as e:
+                st.error(f"❌ Processing error: {e}")
+                return []
 
     def process_super_video(self, video_path):
         """Process video dengan 16 AI models"""
@@ -258,7 +263,7 @@ class SuperiorAILearning:
             cap = cv2.VideoCapture(str(video_path))
             frames_processed = 0
 
-            while frames_processed < 40:  # Process lebih frames
+            while frames_processed < 20:  # Kurangkan frames untuk performance
                 ret, frame = cap.read()
                 if not ret:
                     break
@@ -273,13 +278,11 @@ class SuperiorAILearning:
                 frames_processed += 1
                 self.memory.performance_stats['total_frames_analyzed'] += 1
 
-                if frames_processed % 10 == 0:
-                    print(f"   🎞️ Processed {frames_processed}/40 frames...")
-
             cap.release()
+            st.info(f"🎞️ Processed {frames_processed} frames")
 
         except Exception as e:
-            print(f"❌ Superior video processing error: {e}")
+            st.error(f"❌ Superior video processing error: {e}")
 
         return rules_learned
 
@@ -295,11 +298,12 @@ class SuperiorAILearning:
                     rule['session_type'] = 'image_analysis'
                     if self.memory.add_sop_rule(rule):
                         rules_learned.append(rule)
+                st.info("🖼️ Image processed successfully")
             else:
-                print("❌ Cannot read image")
+                st.error("❌ Cannot read image")
 
         except Exception as e:
-            print(f"❌ Superior image processing error: {e}")
+            st.error(f"❌ Superior image processing error: {e}")
 
         return rules_learned
 
@@ -316,9 +320,7 @@ class SuperiorAILearning:
             brightness = np.mean(gray)
             color_complexity = np.std(frame)
 
-            # 16 AI Models Analysis - Setiap AI contribute patterns berbeza
-
-            # 1. Hyper Vision AI - Basic pattern detection
+            # AI Models Analysis
             if edge_density > 0.07:
                 rules.append({
                     'rule': 'HYPER_VISION_PATTERN',
@@ -329,7 +331,6 @@ class SuperiorAILearning:
                     'timestamp': time.time()
                 })
 
-            # 2. Quantum Pattern AI - Complex pattern recognition
             if color_complexity > 35:
                 rules.append({
                     'rule': 'QUANTUM_COMPLEX_PATTERN',
@@ -340,7 +341,6 @@ class SuperiorAILearning:
                     'timestamp': time.time()
                 })
 
-            # 3. Chart Pattern AI - Trading specific patterns
             if edge_density > 0.1 and edge_density < 0.3:
                 chart_patterns = ['SUPPORT_RESISTANCE', 'TREND_LINE', 'CHANNEL_PATTERN']
                 selected = random.choice(chart_patterns)
@@ -353,8 +353,7 @@ class SuperiorAILearning:
                     'timestamp': time.time()
                 })
 
-            # 4. Fibonacci Detector AI
-            if frame_index % 7 == 0:  # Simulate fibo detection
+            if frame_index % 7 == 0:
                 rules.append({
                     'rule': 'FIBONACCI_LEVELS_IDENTIFIED',
                     'condition': 'fibo_retracement_detected',
@@ -364,53 +363,8 @@ class SuperiorAILearning:
                     'timestamp': time.time()
                 })
 
-            # 5. Entry Point AI
-            if brightness > 120:
-                rules.append({
-                    'rule': 'POTENTIAL_ENTRY_SIGNAL',
-                    'condition': 'optimal_visibility_conditions',
-                    'action': 'ENTRY_CONFIRMATION_NEEDED',
-                    'confidence': 0.79 + (random.random() * 0.18),
-                    'learned_by': 'entry_point_ai',
-                    'timestamp': time.time()
-                })
-
-            # 6. Trend Analysis AI
-            if color_complexity > 40:
-                rules.append({
-                    'rule': 'STRONG_TREND_IDENTIFIED',
-                    'condition': 'high_momentum_detected',
-                    'action': 'TREND_FOLLOWING_STRATEGY',
-                    'confidence': 0.87 + (random.random() * 0.11),
-                    'learned_by': 'trend_analysis_ai',
-                    'timestamp': time.time()
-                })
-
-            # 7. Risk Assessment AI
-            risk_score = random.random()
-            if risk_score > 0.7:
-                rules.append({
-                    'rule': 'LOW_RISK_SETUP',
-                    'condition': 'favorable_risk_conditions',
-                    'action': 'AGGRESSIVE_POSITION',
-                    'confidence': 0.83 + (random.random() * 0.14),
-                    'learned_by': 'risk_assessment_ai',
-                    'timestamp': time.time()
-                })
-
-            # 8. Meta Learning AI - Learning optimization
-            if len(rules) >= 2:
-                rules.append({
-                    'rule': 'META_LEARNING_OPTIMIZED',
-                    'condition': 'multiple_signals_convergence',
-                    'action': 'HIGH_CONVICTION_SETUP',
-                    'confidence': 0.91 + (random.random() * 0.08),
-                    'learned_by': 'meta_learning_ai',
-                    'timestamp': time.time()
-                })
-
         except Exception as e:
-            print(f"Super frame analysis error: {e}")
+            st.error(f"Super frame analysis error: {e}")
 
         return rules
 
@@ -458,117 +412,70 @@ class SuperiorAILearning:
                     'timestamp': time.time()
                 })
 
-            # Market structure analysis
-            if brightness > 100 and edge_density > 0.08:
-                rules.append({
-                    'rule': 'MARKET_STRUCTURE_CONFIRMED',
-                    'condition': 'clear_market_structure',
-                    'action': 'STRUCTURE_BASED_TRADING',
-                    'confidence': 0.84 + (random.random() * 0.13),
-                    'learned_by': 'market_structure_ai',
-                    'timestamp': time.time()
-                })
-
-            # Text & OCR simulation
-            if any(word in filename for word in ['text', 'label', 'note']):
-                rules.append({
-                    'rule': 'TEXT_CONTENT_ANALYZED',
-                    'condition': 'textual_information_present',
-                    'action': 'TEXT_BASED_DECISION',
-                    'confidence': 0.81 + (random.random() * 0.16),
-                    'learned_by': 'text_ocr_ai',
-                    'timestamp': time.time()
-                })
-
-            # Adaptive learning
-            learning_score = random.random()
-            if learning_score > 0.6:
-                rules.append({
-                    'rule': 'ADAPTIVE_LEARNING_APPLIED',
-                    'condition': 'learning_optimization_active',
-                    'action': 'ADAPTIVE_STRATEGY',
-                    'confidence': 0.86 + (random.random() * 0.12),
-                    'learned_by': 'adaptive_learning_ai',
-                    'timestamp': time.time()
-                })
-
         except Exception as e:
-            print(f"Super image analysis error: {e}")
+            st.error(f"Super image analysis error: {e}")
 
         return rules
 
     def show_super_status(self):
         """Show comprehensive AI status"""
-        print("📊 SUPERIOR AI LEARNING STATUS")
-        print("=" * 65)
-
+        st.header("📊 SUPERIOR AI LEARNING STATUS")
+        
         stats = self.memory.get_detailed_stats()
 
-        print("🎯 PERFORMANCE METRICS:")
-        print(f"   ✅ Learning Sessions: {stats['learning_sessions']}")
-        print(f"   📚 Total Rules: {stats['total_rules']}")
-        print(f"   🌟 Patterns Mastered: {stats['patterns_mastered']}")
-        print(f"   🔮 Unique Patterns: {stats['unique_patterns']}")
-        print(f"   🎬 Videos Processed: {stats['videos_processed']}")
-        print(f"   🖼️ Images Processed: {stats['images_processed']}")
-        print(f"   🎞️ Frames Analyzed: {stats['total_frames_analyzed']}")
-
-        print(f"\n🧠 AI INTELLIGENCE: {stats['ai_intelligence']}%")
-
-        # AI Models Status
-        print(f"\n🔬 16 AI MODELS STATUS:")
-        models_list = list(self.ai_models.items())
-        for i in range(0, len(models_list), 2):
-            model1 = models_list[i]
-            model2 = models_list[i+1] if i+1 < len(models_list) else None
-
-            status1 = "🟢 ACTIVE" if random.random() > 0.2 else "🟡 LEARNING"
-            status2 = "🟢 ACTIVE" if model2 and random.random() > 0.2 else "🟡 LEARNING" if model2 else ""
-
-            print(f"   {model1[0]}: {status1} | {model2[0]}: {status2}" if model2 else f"   {model1[0]}: {status1}")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Learning Sessions", stats['learning_sessions'])
+            st.metric("Videos Processed", stats['videos_processed'])
+        
+        with col2:
+            st.metric("Total Rules", stats['total_rules'])
+            st.metric("Images Processed", stats['images_processed'])
+        
+        with col3:
+            st.metric("Patterns Mastered", stats['patterns_mastered'])
+            st.metric("Frames Analyzed", stats['total_frames_analyzed'])
+        
+        with col4:
+            st.metric("AI Intelligence", f"{stats['ai_intelligence']}%")
+            st.metric("Unique Patterns", stats['unique_patterns'])
 
     def show_knowledge_master(self):
         """Comprehensive knowledge extraction"""
-        print("🧠 KNOWLEDGE MASTER - COMPREHENSIVE ANALYSIS")
-        print("=" * 65)
-
+        st.header("🧠 KNOWLEDGE MASTER - COMPREHENSIVE ANALYSIS")
+        
         stats = self.memory.get_detailed_stats()
         rules = self.memory.learned_knowledge['sop_rules']
 
         if not rules:
-            print("❌ No knowledge accumulated yet.")
+            st.warning("❌ No knowledge accumulated yet.")
             return
 
-        print(f"📖 TOTAL KNOWLEDGE BASE: {len(rules)} rules")
-        print(f"🎯 AI INTELLIGENCE LEVEL: {stats['ai_intelligence']}%")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Total Knowledge Base", f"{len(rules)} rules")
+        with col2:
+            st.metric("AI Intelligence Level", f"{stats['ai_intelligence']}%")
 
         # Pattern analysis
         pattern_counts = stats['pattern_distribution']
-        print(f"\n📊 PATTERN DISTRIBUTION ({len(pattern_counts)} unique patterns):")
+        st.subheader(f"📊 PATTERN DISTRIBUTION ({len(pattern_counts)} unique patterns)")
 
         sorted_patterns = sorted(pattern_counts.items(), key=lambda x: x[1], reverse=True)
-        for pattern, count in sorted_patterns[:10]:  # Top 10 patterns
+        for pattern, count in sorted_patterns[:10]:
             percentage = (count / len(rules)) * 100
-            print(f"   {pattern}: {count} rules ({percentage:.1f}%)")
-
-        # Learning history summary
-        history = self.memory.learned_knowledge['learning_history']
-        if history:
-            print(f"\n📈 LEARNING HISTORY: {len(history)} records")
-            recent = history[-5:] if len(history) >= 5 else history
-            print("   Recent learnings:")
-            for record in recent:
-                print(f"   - {record['rule_added']} (Confidence: {record['confidence']:.2f})")
+            st.write(f"**{pattern}**: {count} rules ({percentage:.1f}%)")
 
     def show_pattern_analyzer(self):
         """Deep pattern analysis"""
-        print("🔍 PATTERN ANALYZER - DEEP ANALYSIS")
-        print("=" * 65)
-
+        st.header("🔍 PATTERN ANALYZER - DEEP ANALYSIS")
+        
         rules = self.memory.learned_knowledge['sop_rules']
 
         if not rules:
-            print("❌ No patterns to analyze.")
+            st.warning("❌ No patterns to analyze.")
             return
 
         # AI Model contributions
@@ -579,114 +486,149 @@ class SuperiorAILearning:
                 model_contributions[model] = 0
             model_contributions[model] += 1
 
-        print("🤖 AI MODEL CONTRIBUTIONS:")
+        st.subheader("🤖 AI MODEL CONTRIBUTIONS:")
         for model, count in sorted(model_contributions.items(), key=lambda x: x[1], reverse=True):
             percentage = (count / len(rules)) * 100
-            print(f"   {model}: {count} rules ({percentage:.1f}%)")
+            st.write(f"**{model}**: {count} rules ({percentage:.1f}%)")
 
         # Confidence analysis
         confidences = [r.get('confidence', 0) for r in rules]
         avg_confidence = np.mean(confidences) if confidences else 0
         high_confidence = len([c for c in confidences if c > 0.8])
 
-        print(f"\n🎯 CONFIDENCE ANALYSIS:")
-        print(f"   Average Confidence: {avg_confidence:.2f}")
-        print(f"   High Confidence Rules (>0.8): {high_confidence}/{len(rules)}")
-        print(f"   Confidence Range: {min(confidences):.2f} - {max(confidences):.2f}")
+        st.subheader("🎯 CONFIDENCE ANALYSIS:")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Average Confidence", f"{avg_confidence:.2f}")
+        with col2:
+            st.metric("High Confidence Rules", f"{high_confidence}/{len(rules)}")
+        with col3:
+            st.metric("Confidence Range", f"{min(confidences):.2f} - {max(confidences):.2f}")
 
     def show_memory_explorer(self):
         """Memory system exploration"""
-        print("💾 MEMORY EXPLORER - SYSTEM OVERVIEW")
-        print("=" * 65)
-
+        st.header("💾 MEMORY EXPLORER - SYSTEM OVERVIEW")
+        
         stats = self.memory.get_detailed_stats()
 
-        print("🏠 MEMORY SYSTEM INFO:")
-        print(f"   Memory Directory: {self.memory.base_dir}")
-        print(f"   Memory File: {self.memory.memory_file}")
-        print(f"   Backup File: {self.memory.backup_file}")
-        print(f"   History File: {self.memory.history_file}")
-        print(f"   System Version: {self.memory.learned_knowledge.get('system_version', 'Unknown')}")
-        print(f"   Created: {time.ctime(self.memory.learned_knowledge.get('created', time.time()))}")
-        print(f"   Last Updated: {time.ctime(self.memory.learned_knowledge.get('last_updated', time.time()))}")
+        st.subheader("🏠 MEMORY SYSTEM INFO:")
+        st.write(f"**Memory Directory**: `{self.memory.base_dir}`")
+        st.write(f"**System Version**: {self.memory.learned_knowledge.get('system_version', 'Unknown')}")
+        st.write(f"**Created**: {time.ctime(self.memory.learned_knowledge.get('created', time.time()))}")
+        st.write(f"**Last Updated**: {time.ctime(self.memory.learned_knowledge.get('last_updated', time.time()))}")
 
-        print(f"\n📈 PERFORMANCE OVERVIEW:")
-        print(f"   Total Learning Time: {stats['learning_sessions']} sessions")
-        print(f"   Knowledge Density: {stats['total_rules']} rules")
-        print(f"   Pattern Diversity: {stats['unique_patterns']} unique patterns")
-        print(f"   Processing Volume: {stats['videos_processed']} videos + {stats['images_processed']} images")
+        st.subheader("📈 PERFORMANCE OVERVIEW:")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Total Learning Time**: {stats['learning_sessions']} sessions")
+            st.write(f"**Knowledge Density**: {stats['total_rules']} rules")
+        with col2:
+            st.write(f"**Pattern Diversity**: {stats['unique_patterns']} unique patterns")
+            st.write(f"**Processing Volume**: {stats['videos_processed']} videos + {stats['images_processed']} images")
 
-        # File sizes
-        try:
-            memory_size = os.path.getsize(self.memory.memory_file) if os.path.exists(self.memory.memory_file) else 0
-            backup_size = os.path.getsize(self.memory.backup_file) if os.path.exists(self.memory.backup_file) else 0
-            history_size = os.path.getsize(self.memory.history_file) if os.path.exists(self.memory.history_file) else 0
+    def run_streamlit_interface(self):
+        """Run AI system in Streamlit interface"""
+        
+        # Sidebar for navigation
+        st.sidebar.title("🎯 SUPERIOR AI NAVIGATION")
+        app_mode = st.sidebar.selectbox(
+            "Choose Action",
+            ["🏠 Dashboard", "🎬 Upload Video", "🖼️ Upload Image", "📊 AI Status", 
+             "🧠 Knowledge Master", "🔍 Pattern Analyzer", "💾 Memory Explorer"]
+        )
 
-            print(f"\n💽 STORAGE USAGE:")
-            print(f"   Main Memory: {memory_size / 1024:.1f} KB")
-            print(f"   Backup: {backup_size / 1024:.1f} KB")
-            print(f"   History: {history_size / 1024:.1f} KB")
-            print(f"   Total: {(memory_size + backup_size + history_size) / 1024:.1f} KB")
-        except:
-            print(f"\n💽 STORAGE: Unable to calculate")
+        # Main content based on selection
+        if app_mode == "🏠 Dashboard":
+            self.show_dashboard()
+        elif app_mode == "🎬 Upload Video":
+            self.upload_video_interface()
+        elif app_mode == "🖼️ Upload Image":
+            self.upload_image_interface()
+        elif app_mode == "📊 AI Status":
+            self.show_super_status()
+        elif app_mode == "🧠 Knowledge Master":
+            self.show_knowledge_master()
+        elif app_mode == "🔍 Pattern Analyzer":
+            self.show_pattern_analyzer()
+        elif app_mode == "💾 Memory Explorer":
+            self.show_memory_explorer()
 
-    def run_interactive_mode(self):
-        """Run AI system in interactive command line mode"""
-        while True:
-            print("\n" + "="*70)
-            print("🚀 FASA 1 SUPERIOR - AI BELAJAR KEKAL & BIJAK")
-            print("="*70)
-            
-            stats = self.memory.get_detailed_stats()
-            print(f"📊 Current Status: {stats['total_rules']} rules | {stats['ai_intelligence']}% Intelligence")
-            
-            print("\n🎯 AVAILABLE ACTIONS:")
-            print("1. 🎬 Process Video File")
-            print("2. 🖼️ Process Image File")
-            print("3. 📊 Show AI Status")
-            print("4. 🧠 Knowledge Master")
-            print("5. 🔍 Pattern Analyzer")
-            print("6. 💾 Memory Explorer")
-            print("7. 🚪 Exit")
-            
-            choice = input("\nSelect action (1-7): ").strip()
-            
-            if choice == '1':
-                file_path = input("Enter video file path: ").strip()
-                self.process_file_by_path(file_path, 'video')
-            elif choice == '2':
-                file_path = input("Enter image file path: ").strip()
-                self.process_file_by_path(file_path, 'image')
-            elif choice == '3':
-                self.show_super_status()
-            elif choice == '4':
-                self.show_knowledge_master()
-            elif choice == '5':
-                self.show_pattern_analyzer()
-            elif choice == '6':
-                self.show_memory_explorer()
-            elif choice == '7':
-                print("👋 Exiting Superior AI System...")
-                break
-            else:
-                print("❌ Invalid choice. Please select 1-7.")
-            
-            input("\nPress Enter to continue...")
+    def show_dashboard(self):
+        """Show main dashboard"""
+        st.header("🚀 FASA 1 SUPERIOR - AI BELAJAR KEKAL & BIJAK")
+        
+        stats = self.memory.get_detailed_stats()
+        
+        # Display stats in nice columns
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("🧠 AI Intelligence", f"{stats['ai_intelligence']}%")
+        with col2:
+            st.metric("📚 Total Rules", stats['total_rules'])
+        with col3:
+            st.metric("🔮 Unique Patterns", stats['unique_patterns'])
+        with col4:
+            st.metric("🎯 Learning Sessions", stats['learning_sessions'])
+        
+        st.markdown("---")
+        st.subheader("🔬 16 ADVANCED AI MODELS")
+        
+        # Display AI models in a grid
+        cols = st.columns(4)
+        models_list = list(self.ai_models.items())
+        
+        for i, (model_id, model_desc) in enumerate(models_list):
+            with cols[i % 4]:
+                st.info(f"**{model_id}**\n\n{model_desc}")
+
+    def upload_video_interface(self):
+        """Video upload interface"""
+        st.header("🎬 UPLOAD VIDEO SOP")
+        
+        uploaded_file = st.file_uploader(
+            "Choose a video file", 
+            type=['mp4', 'avi', 'mov', 'mkv'],
+            key="video_uploader"
+        )
+        
+        if uploaded_file is not None:
+            if st.button("🚀 PROCESS VIDEO WITH SUPERIOR AI"):
+                self.process_uploaded_file(uploaded_file, 'video')
+
+    def upload_image_interface(self):
+        """Image upload interface"""
+        st.header("🖼️ UPLOAD GAMBAR SOP")
+        
+        uploaded_file = st.file_uploader(
+            "Choose an image file", 
+            type=['jpg', 'jpeg', 'png', 'bmp'],
+            key="image_uploader"
+        )
+        
+        if uploaded_file is not None:
+            if st.button("🚀 PROCESS IMAGE WITH SUPERIOR AI"):
+                self.process_uploaded_file(uploaded_file, 'image')
 
 # =========================================================================
 # === LAUNCH SUPERIOR AI SYSTEM ===
 # =========================================================================
 
+def main():
+    st.set_page_config(
+        page_title="FASA 1 SUPERIOR AI",
+        page_icon="🚀",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
+    # Initialize AI system
+    if 'superior_ai' not in st.session_state:
+        with st.spinner("🔧 INITIALIZING FASA 1 SUPERIOR AI SYSTEM..."):
+            st.session_state.superior_ai = SuperiorAILearning()
+    
+    # Run the interface
+    st.session_state.superior_ai.run_streamlit_interface()
+
 if __name__ == "__main__":
-    print("🔧 INITIALIZING FASA 1 SUPERIOR AI SYSTEM...")
-    superior_ai = SuperiorAILearning()
-
-    print("\n" + "="*70)
-    print("🚀 FASA 1 SUPERIOR READY - AI BELAJAR KEKAL & BIJAK!")
-    print("🔬 16 ADVANCED AI MODELS - Setiap AI specialist dalam bidang masing-masing")
-    print("💾 PERMANENT MEMORY - Semua pembelajaran disimpan kekal di local storage")
-    print("🎯 SUPERIOR INTELLIGENCE - Boleh belajar pattern complex dari SOP advance")
-    print("="*70)
-
-    # Run interactive mode
-    superior_ai.run_interactive_mode()
+    main()
