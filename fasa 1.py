@@ -12,8 +12,6 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Mount Google Drive untuk memory kekal
-from google.colab import drive
-drive.mount('/content/drive')
 
 # =========================================================================
 # === SUPER MEMORY SYSTEM - SIMPAN SEMUA KEKAL ===
@@ -804,4 +802,5 @@ print("🎯 SUPERIOR INTELLIGENCE - Boleh belajar pattern complex dari SOP advan
 print("="*70)
 
 # Display the complete system
+
 superior_ai.display_superior_system()
